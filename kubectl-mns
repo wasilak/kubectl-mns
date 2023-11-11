@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+function usage() {
+  echo "Usage"
+  echo "kubectl mns namespace-1 namespac-2 namespace-N -- [regular kubectl command]"
+  echo ""
+  echo "List of namespaces defaults to [default]"
+  echo ""
+  echo "kubectl mns -h | --help               : Usage of this command line";
+  echo ""
+}
+
+function run_kubectl() {
+    is_double_dash="false"
+    namespaces=()
+    actual_kubectl_args=()
+
+    for item in "$@"; do
+    
+      if [ "--" == "$item" ]; then
+        is_double_dash="true";
+        continue
+      fi
+      
+      if [ "false" == "$is_double_dash" ]; then
+        namespaces+=("$item")
+      else
+        if [ "--all-namespaces" != "$item" ]; then
+          actual_kubectl_args+=("$item")
+        fi
+      fi
+
+    done
+    
+    if [ ${#namespaces[@]} -eq 0 ]; then
+      namespaces+=("default")
+    fi
+    
+    if [ ${#actual_kubectl_args[@]} -eq 0 ]; then
+      usage && exit 1
+    fi
+
+    for ns in ${namespaces[@]}; do
+      kubectl_command="kubectl"
+      
+      for command_arg in ${actual_kubectl_args[@]}; do
+        kubectl_command+=" $command_arg"
+      done
+      
+      kubectl_command+=" --namespace $ns"
+
+      data=$($kubectl_command)
+      if [[ ! -z $data ]]; then 
+            echo -e "$data"
+            printf '\n'
+      fi
+    done
+
+}
+
+if [ -z "$1" ]; then usage && exit; fi
+if [ "-h" == "$1" ]; then usage && exit; fi
+if [ "--help" == "$1" ]; then usage && exit; fi
+
+run_kubectl "$@"
