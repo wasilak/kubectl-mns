@@ -1,5 +1,7 @@
 # kubectl-mns
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/692172f411b049a6bb67295451c7d8a1)](https://app.codacy.com/gh/wasilak/kubectl-mns?utm_source=github.com&utm_medium=referral&utm_content=wasilak/kubectl-mns&utm_campaign=Badge_Grade)
+
 `kubectl-mns` is a powerful Kubernetes plugin that enables you to execute kubectl commands on multiple namespaces, giving you the flexibility to target any subset of namespaces, rather than all of them as with the `--all-namespaces` argument.
 
 ## Features
