@@ -23,15 +23,15 @@ To install `kubectl-mns`, follow these steps:
 
 2. Make it executable.
 
-   ```sh
-   chmod +x kubectl-mns
-   ```
+    ```sh
+    chmod +x kubectl-mns
+    ```
 
 3. Move it to a directory in your system's PATH, so you can use it as a kubectl plugin.
 
-   ```sh
-   mv kubectl-mns /usr/local/bin/
-   ```
+    ```sh
+    mv kubectl-mns /usr/local/bin/
+    ```
 
 ## Usage
 
@@ -39,15 +39,15 @@ To install `kubectl-mns`, follow these steps:
 
 - Execute a kubectl command on specific namespaces:
 
-   ```sh
-   kubectl mns ns1 ns2 ns3 -- kubectl get pods
-   ```
+    ```sh
+    kubectl mns ns1 ns2 ns3 -- kubectl get pods
+    ```
 
 - For a complete list of available commands and their options, run:
 
-```sh
-kubectl mns --help
-```
+    ```sh
+    kubectl mns --help
+    ```
 
 ## Contributing
 
