@@ -42,17 +42,10 @@ function run_kubectl() {
       usage && exit 1
     fi
 
-    for ns in ${namespaces[@]}; do
-      kubectl_command="kubectl"
-      
-      for command_arg in ${actual_kubectl_args[@]}; do
-        kubectl_command+=" $command_arg"
-      done
-      
-      kubectl_command+=" --namespace $ns"
-
-      data=$($kubectl_command)
-      if [[ ! -z $data ]]; then 
+    for ns in "${namespaces[@]}"; do
+      local kubectl_cmd=("kubectl" "${actual_kubectl_args[@]}" --namespace "$ns")
+      data=$("${kubectl_cmd[@]}")
+      if [[ -n "$data" ]]; then
             echo -e "$data"
             printf '\n'
       fi
