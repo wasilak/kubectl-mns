@@ -25,18 +25,17 @@ Run one kubectl command across many namespaces without typing it multiple times 
 
 ### Validated
 
-(None yet — first milestone)
+*Validated in Phase 01 (hardening):*
+- [x] Array expansions are quoted: `"${namespaces[@]}"`, `"${actual_kubectl_args[@]}"`
+- [x] kubectl is invoked via array, not string concatenation
+- [x] `$data` check uses `-n "$data"` instead of `! -z $data`
+- [x] README usage example does not include redundant `kubectl` after `--`
+- [x] `usage()` typo fixed: `namespace-2` (was `namespac-2`)
+- [x] `usage()` output goes to stderr
+- [x] Exit code is 1 when invoked with no args (was 0)
+- [x] Codacy GitHub Action is pinned to a commit SHA
 
 ### Active
-
-- [ ] Array expansions are quoted: `"${namespaces[@]}"`, `"${actual_kubectl_args[@]}"`
-- [ ] kubectl is invoked via array, not string concatenation
-- [ ] `$data` check uses `-n "$data"` instead of `! -z $data`
-- [ ] README usage example does not include redundant `kubectl` after `--`
-- [ ] `usage()` typo fixed: `namespace-2` (was `namespac-2`)
-- [ ] `usage()` output goes to stderr
-- [ ] Exit code is 1 when invoked with no args (was 0)
-- [ ] Codacy GitHub Action is pinned to a commit SHA
 - [ ] Per-namespace failure is caught: script continues, error reported to stderr
 - [ ] Namespace label printed before each output block: `=== namespace: <ns> ===`
 - [ ] `--context <ctx>` accepted before `--` and forwarded to kubectl
@@ -67,9 +66,9 @@ Run one kubectl command across many namespaces without typing it multiple times 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Array-based exec over string concatenation | Eliminates word-splitting bug; args with spaces work correctly | — Pending |
-| Continue-on-failure per namespace | Partial results are more useful than aborting on first RBAC error | — Pending |
-| bats-core for tests | Standard bash testing tool; supports mocking kubectl via PATH stub | — Pending |
+| Array-based exec over string concatenation | Eliminates word-splitting bug; args with spaces work correctly | Implemented in Phase 01 |
+| Continue-on-failure per namespace | Partial results are more useful than aborting on first RBAC error | — Pending (Phase 02) |
+| bats-core for tests | Standard bash testing tool; supports mocking kubectl via PATH stub | — Pending (Phase 03) |
 
 ## Evolution
 
@@ -89,4 +88,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-21 — Milestone v1.0 started*
+*Last updated: 2026-06-21 — Phase 01 (hardening) complete*
