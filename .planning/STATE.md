@@ -3,23 +3,23 @@ milestone: v1.0
 name: Foundation & Quality
 status: planning
 progress:
-  phases_total: 0
+  phases_total: 3
   phases_done: 0
 ---
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap defined, ready to execute)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-21 — Milestone v1.0 started
+Status: Ready for Phase 1
+Last activity: 2026-06-21 — Roadmap created (3 phases, 19 requirements)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-06-21)
 
 **Core value:** Run one kubectl command across many namespaces without typing it multiple times — output clearly labeled per namespace.
-**Current focus:** Requirements & Roadmap
+**Current focus:** Phase 1 — Hardening (shell safety, bug fixes, CI security)
 
 ## Accumulated Context
 

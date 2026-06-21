@@ -58,22 +58,22 @@ _Created: 2026-06-21_
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| SAFETY-01 | TBD | — |
-| SAFETY-02 | TBD | — |
-| SAFETY-03 | TBD | — |
-| BUGFIX-01 | TBD | — |
-| BUGFIX-02 | TBD | — |
-| BUGFIX-03 | TBD | — |
-| BUGFIX-04 | TBD | — |
-| SECURITY-01 | TBD | — |
-| ERRORS-01 | TBD | — |
-| OUTPUT-01 | TBD | — |
-| ARGS-01 | TBD | — |
-| ARGS-02 | TBD | — |
-| TESTS-01 | TBD | — |
-| TESTS-02 | TBD | — |
-| TESTS-03 | TBD | — |
-| TESTS-04 | TBD | — |
-| TESTS-05 | TBD | — |
-| TESTS-06 | TBD | — |
-| TESTS-07 | TBD | — |
+| SAFETY-01 | Phase 1 | Pending |
+| SAFETY-02 | Phase 1 | Pending |
+| SAFETY-03 | Phase 1 | Pending |
+| BUGFIX-01 | Phase 1 | Pending |
+| BUGFIX-02 | Phase 1 | Pending |
+| BUGFIX-03 | Phase 1 | Pending |
+| BUGFIX-04 | Phase 1 | Pending |
+| SECURITY-01 | Phase 1 | Pending |
+| ERRORS-01 | Phase 2 | Pending |
+| OUTPUT-01 | Phase 2 | Pending |
+| ARGS-01 | Phase 2 | Pending |
+| ARGS-02 | Phase 2 | Pending |
+| TESTS-01 | Phase 3 | Pending |
+| TESTS-02 | Phase 3 | Pending |
+| TESTS-03 | Phase 3 | Pending |
+| TESTS-04 | Phase 3 | Pending |
+| TESTS-05 | Phase 3 | Pending |
+| TESTS-06 | Phase 3 | Pending |
+| TESTS-07 | Phase 3 | Pending |
