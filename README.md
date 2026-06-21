@@ -42,7 +42,7 @@ To install `kubectl-mns`, follow these steps:
 - Execute a kubectl command on specific namespaces:
 
     ```sh
-    kubectl mns ns1 ns2 ns3 -- kubectl get pods
+    kubectl mns ns1 ns2 ns3 -- get pods
     ```
 
 - For a complete list of available commands and their options, run:
