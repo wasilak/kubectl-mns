@@ -37,7 +37,10 @@ Plans:
 2. When one namespace returns a non-zero exit code, the script prints an error to stderr for that namespace and continues to the next one.
 3. Running `kubectl-mns --context my-ctx ns1 -- get pods` forwards `--context my-ctx` to every kubectl invocation.
 4. Running `kubectl-mns --kubeconfig /path/to/config ns1 -- get pods` forwards `--kubeconfig /path/to/config` to every kubectl invocation.
-**Plans:** TBD
+**Plans:** 1/1 plans pending
+
+Plans:
+- [ ] 02-01-PLAN.md — Add output labels, error continuation, and --context/--kubeconfig forwarding (ERRORS-01, OUTPUT-01, ARGS-01, ARGS-02)
 
 ### Phase 3: Tests
 **Goal:** A bats-core suite at `test/kubectl-mns.bats` exercises all plugin behaviors and protects against regressions.
