@@ -3,13 +3,13 @@
 set -eo pipefail
 
 function usage() {
-  echo "Usage"
-  echo "kubectl mns namespace-1 namespac-2 namespace-N -- [regular kubectl command]"
-  echo ""
-  echo "List of namespaces defaults to [default]"
-  echo ""
-  echo "kubectl mns -h | --help               : Usage of this command line";
-  echo ""
+  echo "Usage" >&2
+  echo "kubectl mns namespace-1 namespace-2 namespace-N -- [regular kubectl command]" >&2
+  echo "" >&2
+  echo "List of namespaces defaults to [default]" >&2
+  echo "" >&2
+  echo "kubectl mns -h | --help               : Usage of this command line" >&2
+  echo "" >&2
 }
 
 function run_kubectl() {
@@ -42,17 +42,10 @@ function run_kubectl() {
       usage && exit 1
     fi
 
-    for ns in ${namespaces[@]}; do
-      kubectl_command="kubectl"
-      
-      for command_arg in ${actual_kubectl_args[@]}; do
-        kubectl_command+=" $command_arg"
-      done
-      
-      kubectl_command+=" --namespace $ns"
-
-      data=$($kubectl_command)
-      if [[ ! -z $data ]]; then 
+    for ns in "${namespaces[@]}"; do
+      local kubectl_cmd=("kubectl" "${actual_kubectl_args[@]}" --namespace "$ns")
+      data=$("${kubectl_cmd[@]}")
+      if [[ -n "$data" ]]; then
             echo -e "$data"
             printf '\n'
       fi
@@ -60,7 +53,7 @@ function run_kubectl() {
 
 }
 
-if [ -z "$1" ]; then usage && exit; fi
+if [ -z "$1" ]; then usage && exit 1; fi
 if [ "-h" == "$1" ]; then usage && exit; fi
 if [ "--help" == "$1" ]; then usage && exit; fi
 
