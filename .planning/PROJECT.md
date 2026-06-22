@@ -35,11 +35,15 @@ Run one kubectl command across many namespaces without typing it multiple times 
 - [x] Exit code is 1 when invoked with no args (was 0)
 - [x] Codacy GitHub Action is pinned to a commit SHA
 
+*Validated in Phase 02 (features):*
+- [x] Per-namespace failure is caught: script continues, error reported to stderr (ERRORS-01)
+- [x] Namespace label printed only on success path: `=== namespace: <ns> ===` (OUTPUT-01)
+- [x] `--context <ctx>` accepted before `--` and forwarded to kubectl (ARGS-01)
+- [x] `--kubeconfig <path>` accepted before `--` and forwarded to kubectl (ARGS-02)
+- [x] kubectl stderr passes through live; not captured into `$data` (HIGH fix from cross-AI review)
+- [x] Post-loop guard: `kubectl-mns --context` (no value) exits 1 with clear error
+
 ### Active
-- [ ] Per-namespace failure is caught: script continues, error reported to stderr
-- [ ] Namespace label printed before each output block: `=== namespace: <ns> ===`
-- [ ] `--context <ctx>` accepted before `--` and forwarded to kubectl
-- [ ] `--kubeconfig <path>` accepted before `--` and forwarded to kubectl
 - [ ] bats-core test suite covers: namespace defaulting, arg parsing, `--all-namespaces` stripping, error cases
 
 ### Out of Scope
@@ -50,7 +54,7 @@ Run one kubectl command across many namespaces without typing it multiple times 
 
 ## Context
 
-- Single-file bash plugin (68 lines), no build system, no dependencies beyond bash and kubectl
+- Single-file bash plugin (~80 lines), no build system, no dependencies beyond bash and kubectl
 - GitHub Actions: Codacy static analysis, stale issue bot
 - Renovate configured but `gomod` preset has no effect (no Go code)
 - Issue #9 (shell safety) opened by external contributor — valid, all points confirmed
@@ -67,7 +71,7 @@ Run one kubectl command across many namespaces without typing it multiple times 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Array-based exec over string concatenation | Eliminates word-splitting bug; args with spaces work correctly | Implemented in Phase 01 |
-| Continue-on-failure per namespace | Partial results are more useful than aborting on first RBAC error | — Pending (Phase 02) |
+| Continue-on-failure per namespace | Partial results are more useful than aborting on first RBAC error | Implemented in Phase 02 |
 | bats-core for tests | Standard bash testing tool; supports mocking kubectl via PATH stub | — Pending (Phase 03) |
 
 ## Evolution
@@ -88,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-21 — Phase 01 (hardening) complete*
+*Last updated: 2026-06-22 — Phase 02 (features) complete*
