@@ -43,8 +43,12 @@ Run one kubectl command across many namespaces without typing it multiple times 
 - [x] kubectl stderr passes through live; not captured into `$data` (HIGH fix from cross-AI review)
 - [x] Post-loop guard: `kubectl-mns --context` (no value) exits 1 with clear error
 
+*Validated in Phase 03 (tests):*
+- [x] bats-core test suite covers: namespace defaulting, arg parsing, `--all-namespaces` stripping, error cases (TESTS-01..07)
+- [x] Tests run without a live cluster via kubectl PATH stub
+- [x] GitHub Actions CI runs `bats test/kubectl-mns.bats` on every push and PR to main (SHA-pinned)
+
 ### Active
-- [ ] bats-core test suite covers: namespace defaulting, arg parsing, `--all-namespaces` stripping, error cases
 
 ### Out of Scope
 
@@ -72,7 +76,7 @@ Run one kubectl command across many namespaces without typing it multiple times 
 |----------|-----------|---------|
 | Array-based exec over string concatenation | Eliminates word-splitting bug; args with spaces work correctly | Implemented in Phase 01 |
 | Continue-on-failure per namespace | Partial results are more useful than aborting on first RBAC error | Implemented in Phase 02 |
-| bats-core for tests | Standard bash testing tool; supports mocking kubectl via PATH stub | — Pending (Phase 03) |
+| bats-core for tests | Standard bash testing tool; supports mocking kubectl via PATH stub | Implemented in Phase 03 |
 
 ## Evolution
 
@@ -92,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-22 — Phase 02 (features) complete*
+*Last updated: 2026-06-22 — Phase 03 (tests) complete — all phases done, v1.0 milestone complete*
