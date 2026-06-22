@@ -14,40 +14,63 @@ function usage() {
 
 function run_kubectl() {
     is_double_dash="false"
+    consume_next_as=""
     namespaces=()
     actual_kubectl_args=()
+    extra_kubectl_flags=()
 
     for item in "$@"; do
-    
-      if [ "--" == "$item" ]; then
-        is_double_dash="true";
+
+      if [[ -n "$consume_next_as" ]]; then
+        extra_kubectl_flags+=("$consume_next_as" "$item")
+        consume_next_as=""
         continue
       fi
-      
+
+      if [ "--" == "$item" ]; then
+        is_double_dash="true"
+        continue
+      fi
+
       if [ "false" == "$is_double_dash" ]; then
-        namespaces+=("$item")
+        case "$item" in
+          --context|--kubeconfig)
+            consume_next_as="$item"
+            ;;
+          *)
+            namespaces+=("$item")
+            ;;
+        esac
       else
-        if [ "--all-namespaces" != "$item" ]; then
+        if [[ "$item" != "--all-namespaces" && "$item" != "-A" ]]; then
           actual_kubectl_args+=("$item")
         fi
       fi
 
     done
-    
+
+    if [[ -n "$consume_next_as" ]]; then
+      printf 'Error: %s requires a value\n' "$consume_next_as" >&2
+      exit 1
+    fi
+
     if [ ${#namespaces[@]} -eq 0 ]; then
       namespaces+=("default")
     fi
-    
+
     if [ ${#actual_kubectl_args[@]} -eq 0 ]; then
       usage && exit 1
     fi
 
     for ns in "${namespaces[@]}"; do
-      local kubectl_cmd=("kubectl" "${actual_kubectl_args[@]}" --namespace "$ns")
-      data=$("${kubectl_cmd[@]}")
+      local kubectl_cmd=("kubectl" "${extra_kubectl_flags[@]}" "${actual_kubectl_args[@]}" --namespace "$ns")
+      if ! data=$("${kubectl_cmd[@]}"); then
+        printf 'Error: kubectl failed for namespace %s\n' "$ns" >&2
+        continue
+      fi
+      printf '=== namespace: %s ===\n' "$ns"
       if [[ -n "$data" ]]; then
-            echo -e "$data"
-            printf '\n'
+        printf '%s\n\n' "$data"
       fi
     done
 
