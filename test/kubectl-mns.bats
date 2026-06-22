@@ -132,3 +132,11 @@ STUBEOF
   [ -f "$PLUGIN" ]
   [ -x "$PLUGIN" ]
 }
+
+# TESTS-11: -A before -- is treated as namespace (current behavior)
+# TODO: -A before -- is silently treated as a namespace; refine contract
+@test "TESTS-11: -A before -- is treated as namespace (current behavior)" {
+  run "$PLUGIN" -A -- get pods
+  [ "$status" -eq 0 ]
+  rg -qF -- "--namespace -A" "$STUB_CALL_LOG"
+}
