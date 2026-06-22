@@ -89,7 +89,10 @@ STUBEOF
   [ "$status" -eq 0 ]
   rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
   rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
-  [[ "$output" == *"Error"* ]]
+  [[ "$output" == *"Error: kubectl failed for namespace ns1"* ]]
+  [[ "$output" == *"=== namespace: ns2 ==="* ]]
+  [[ "$output" == *"stub output"* ]]
+  [[ "$output" != *"=== namespace: ns1 ==="* ]]
 }
 
 # TESTS-10: all namespaces failing exits non-zero
