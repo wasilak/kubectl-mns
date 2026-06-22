@@ -23,7 +23,7 @@ EOF
 }
 
 teardown() {
-  rm -rf "$STUB_DIR"
+  [ -n "$STUB_DIR" ] && rm -rf "$STUB_DIR"
 }
 
 # TESTS-02: no namespace → defaults to "default"
