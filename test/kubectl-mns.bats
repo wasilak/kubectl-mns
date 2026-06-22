@@ -126,3 +126,9 @@ STUBEOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"Error: --context requires a value"* ]]
 }
+
+# TESTS-01: plugin file exists and is executable
+@test "TESTS-01: plugin file exists and is executable" {
+  [ -f "$PLUGIN" ]
+  [ -x "$PLUGIN" ]
+}
