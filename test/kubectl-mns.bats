@@ -107,3 +107,19 @@ STUBEOF
   rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
   [[ "$output" == *"Error"* ]]
 }
+
+# TESTS-08: --context FLAG VALUE is forwarded before the kubectl subcommand
+@test "TESTS-08: --context FLAG VALUE is forwarded" {
+  run "$PLUGIN" --context ctx-1 -- get pods
+  [ "$status" -eq 0 ]
+  rg -qF -- "--context ctx-1" "$STUB_CALL_LOG"
+  rg -q -- "^--context ctx-1 get pods" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace default" "$STUB_CALL_LOG"
+}
+
+# TESTS-09: --context with no value exits 1
+@test "TESTS-09: --context with no value exits 1" {
+  run "$PLUGIN" --context
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Error: --context requires a value"* ]]
+}
