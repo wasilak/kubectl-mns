@@ -50,7 +50,7 @@ teardown() {
   run "$PLUGIN" ns1 -- get pods --all-namespaces -A
   [ "$status" -eq 0 ]
   ! rg -qF -- "--all-namespaces" "$STUB_CALL_LOG"
-  ! rg -qF -- " -A" "$STUB_CALL_LOG"
+  rg -qx -- "get pods --namespace ns1" "$STUB_CALL_LOG"
 }
 
 # TESTS-05: empty kubectl args → exit 1 and prints usage
