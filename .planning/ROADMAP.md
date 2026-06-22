@@ -49,12 +49,15 @@ Plans:
 1. `bats test/kubectl-mns.bats` runs without error and all tests pass.
 2. The suite covers: default namespace fallback, multi-namespace iteration, `--all-namespaces` stripping, empty-args exit 1, `-h`/`--help` exit 0, and per-namespace failure continuation.
 3. Tests use a kubectl stub on PATH so the suite runs in any environment without a live cluster.
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03-01-PLAN.md — bats suite (TESTS-01..07) + CI workflow with SHA-pinned bats-action
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Hardening | 0/3 | Not started | — |
-| 2. Features | 0/1 | Not started | — |
+| 1. Hardening | 3/3 | Complete | 2026-06-21 |
+| 2. Features | 1/1 | Complete | 2026-06-22 |
 | 3. Tests | 0/1 | Not started | — |
