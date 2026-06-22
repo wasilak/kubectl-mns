@@ -9,7 +9,7 @@ _Created: 2026-06-21_
 | # | Phase | Goal | Requirements | Criteria |
 |---|-------|------|--------------|----------|
 | 1 | Hardening | 3/3 | Complete   | 2026-06-21 |
-| 2 | Features | Add per-namespace error handling, output labels, and arg forwarding | ERRORS-01, OUTPUT-01, ARGS-01..02 | 4 |
+| 2 | Features | 1/1 | Complete   | 2026-06-22 |
 | 3 | Tests | Cover all behaviors with a bats-core suite | TESTS-01..07 | 3 |
 
 ## Phase Details
@@ -37,10 +37,10 @@ Plans:
 2. When one namespace returns a non-zero exit code, the script prints an error to stderr for that namespace and continues to the next one.
 3. Running `kubectl-mns --context my-ctx ns1 -- get pods` forwards `--context my-ctx` to every kubectl invocation.
 4. Running `kubectl-mns --kubeconfig /path/to/config ns1 -- get pods` forwards `--kubeconfig /path/to/config` to every kubectl invocation.
-**Plans:** 1/1 plans pending
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — Add output labels, error continuation, and --context/--kubeconfig forwarding (ERRORS-01, OUTPUT-01, ARGS-01, ARGS-02)
+- [x] 02-01-PLAN.md — Add output labels, error continuation, and --context/--kubeconfig forwarding (ERRORS-01, OUTPUT-01, ARGS-01, ARGS-02)
 
 ### Phase 3: Tests
 **Goal:** A bats-core suite at `test/kubectl-mns.bats` exercises all plugin behaviors and protects against regressions.
