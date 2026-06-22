@@ -62,18 +62,23 @@ function run_kubectl() {
       usage && exit 1
     fi
 
+    local all_failed="true"
     for ns in "${namespaces[@]}"; do
       local kubectl_cmd=("kubectl" "${extra_kubectl_flags[@]}" "${actual_kubectl_args[@]}" --namespace "$ns")
       if ! data=$("${kubectl_cmd[@]}"); then
         printf 'Error: kubectl failed for namespace %s\n' "$ns" >&2
         continue
       fi
+      all_failed="false"
       printf '=== namespace: %s ===\n' "$ns"
       if [[ -n "$data" ]]; then
         printf '%s\n\n' "$data"
       fi
     done
 
+    if [[ "$all_failed" == "true" ]]; then
+      exit 1
+    fi
 }
 
 if [ -z "$1" ]; then usage && exit 1; fi

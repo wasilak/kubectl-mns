@@ -92,8 +92,18 @@ STUBEOF
   [[ "$output" == *"Error"* ]]
 }
 
-# TESTS-01: test file exists and is readable by bats
-@test "TESTS-01: test file exists and is readable by bats" {
-  [ -f "$BATS_TEST_FILENAME" ]
-  [ -r "$BATS_TEST_FILENAME" ]
+# TESTS-10: all namespaces failing exits non-zero
+@test "TESTS-10: all namespaces failing exits non-zero" {
+  cat > "$STUB_DIR/kubectl" << 'STUBEOF'
+#!/usr/bin/env bash
+echo "$@" >> "$STUB_CALL_LOG"
+exit 1
+STUBEOF
+  chmod +x "$STUB_DIR/kubectl"
+
+  run "$PLUGIN" ns1 ns2 -- get pods
+  [ "$status" -ne 0 ]
+  rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
+  [[ "$output" == *"Error"* ]]
 }
