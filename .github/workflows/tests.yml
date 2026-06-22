@@ -25,5 +25,8 @@ jobs:
           detik-install: false
           file-install: false
 
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+
       - name: Run tests
         run: bats test/kubectl-mns.bats
