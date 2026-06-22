@@ -30,7 +30,7 @@ teardown() {
 @test "TESTS-02: no namespace defaults to 'default'" {
   run "$PLUGIN" -- get pods
   [ "$status" -eq 0 ]
-  grep -q -- "--namespace default" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace default" "$STUB_CALL_LOG"
 }
 
 # TESTS-03: multiple namespaces → one kubectl call per namespace
@@ -39,8 +39,8 @@ teardown() {
   [ "$status" -eq 0 ]
   call_count=$(wc -l < "$STUB_CALL_LOG")
   [ "$call_count" -eq 2 ]
-  grep -q -- "--namespace ns1" "$STUB_CALL_LOG"
-  grep -q -- "--namespace ns2" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
   [[ "$output" == *"=== namespace: ns1 ==="* ]]
   [[ "$output" == *"=== namespace: ns2 ==="* ]]
 }
@@ -49,27 +49,24 @@ teardown() {
 @test "TESTS-04: --all-namespaces and -A stripped from forwarded args" {
   run "$PLUGIN" ns1 -- get pods --all-namespaces -A
   [ "$status" -eq 0 ]
-  ! grep -q -- "--all-namespaces" "$STUB_CALL_LOG"
-  ! grep -q -- " -A" "$STUB_CALL_LOG"
+  ! rg -qF -- "--all-namespaces" "$STUB_CALL_LOG"
+  ! rg -qF -- " -A" "$STUB_CALL_LOG"
 }
 
 # TESTS-05: empty kubectl args → exit 1 and prints usage
 @test "TESTS-05: no kubectl args exits 1 and prints usage" {
-  run bash -c '"$PLUGIN" -- 2>&1'
+  run "$PLUGIN" --
   [ "$status" -eq 1 ]
   [[ "$output" == *"Usage"* ]]
 }
 
-# TESTS-06: -h prints usage and exits 0
-@test "TESTS-06: -h prints usage and exits 0" {
-  run bash -c '"$PLUGIN" -h 2>&1'
+# TESTS-06: -h and --help print usage and exit 0
+@test "TESTS-06: -h and --help print usage and exit 0" {
+  run "$PLUGIN" -h
   [ "$status" -eq 0 ]
   [[ "$output" == *"Usage"* ]]
-}
 
-# TESTS-06: --help prints usage and exits 0
-@test "TESTS-06: --help prints usage and exits 0" {
-  run bash -c '"$PLUGIN" --help 2>&1'
+  run "$PLUGIN" --help
   [ "$status" -eq 0 ]
   [[ "$output" == *"Usage"* ]]
 }
@@ -88,10 +85,10 @@ exit 0
 STUBEOF
   chmod +x "$STUB_DIR/kubectl"
 
-  run bash -c '"$PLUGIN" ns1 ns2 -- get pods 2>&1'
+  run "$PLUGIN" ns1 ns2 -- get pods
   [ "$status" -eq 0 ]
-  grep -q -- "--namespace ns1" "$STUB_CALL_LOG"
-  grep -q -- "--namespace ns2" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
   [[ "$output" == *"Error"* ]]
 }
 
