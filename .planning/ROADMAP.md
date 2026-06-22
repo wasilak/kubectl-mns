@@ -10,7 +10,7 @@ _Created: 2026-06-21_
 |---|-------|------|--------------|----------|
 | 1 | Hardening | 3/3 | Complete   | 2026-06-21 |
 | 2 | Features | 1/1 | Complete   | 2026-06-22 |
-| 3 | Tests | Cover all behaviors with a bats-core suite | TESTS-01..07 | 3 |
+| 3 | Tests | 1/1 | Complete   | 2026-06-22 |
 
 ## Phase Details
 
@@ -49,10 +49,10 @@ Plans:
 1. `bats test/kubectl-mns.bats` runs without error and all tests pass.
 2. The suite covers: default namespace fallback, multi-namespace iteration, `--all-namespaces` stripping, empty-args exit 1, `-h`/`--help` exit 0, and per-namespace failure continuation.
 3. Tests use a kubectl stub on PATH so the suite runs in any environment without a live cluster.
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — bats suite (TESTS-01..07) + CI workflow with SHA-pinned bats-action
+- [x] 03-01-PLAN.md — bats suite (TESTS-01..07) + CI workflow with SHA-pinned bats-action
 
 ## Progress
 
