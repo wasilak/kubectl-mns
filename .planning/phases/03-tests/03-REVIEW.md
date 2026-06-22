@@ -8,152 +8,231 @@ files_reviewed_list:
   - .github/workflows/tests.yml
 findings:
   critical: 0
-  warning: 0
+  warning: 4
   info: 4
-  total: 4
-status: clean
+  total: 8
+status: issues_found
 ---
 
 # Phase 03: Code Review Report
 
-**Reviewed:** 2026-06-22
+**Reviewed:** 2026-06-22T00:00:00Z
 **Depth:** standard
 **Files Reviewed:** 2
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the bats-core test suite (`test/kubectl-mns.bats`) and the GitHub Actions workflow (`.github/workflows/tests.yml`). The test coverage is functionally sound and the CI pipeline is minimal but correct. Three quality defects need attention before this ships: a duplicate test ID that breaks traceability, a fragile subprocess invocation pattern used in three tests that will silently break if the environment is not exported correctly, and grep usage that violates project tooling conventions. No security vulnerabilities or data loss risks were found.
+The test suite and CI workflow are functional and reasonably isolated (PATH-based
+kubectl stub, SHA-pinned actions, least-privilege `permissions: contents: read`).
+However, the suite leaves the plugin's most complex parsing logic (`--context` /
+`--kubeconfig`) entirely uncovered, does not assert the exit code when *all*
+namespaces fail (which the current plugin implementation returns `0` for — a latent
+bug), and the CI step that installs ripgrep skips `apt-get update`, which is a known
+source of intermittent CI failures as the runner image ages. Several test
+assertions are weaker or more fragile than they should be.
 
----
+No critical defects that produce false-passing or false-failing tests were found, so
+existing coverage is trustworthy as far as it goes — it simply does not go far
+enough into the plugin's branching logic.
 
 ## Warnings
 
-### WR-01: Duplicate test ID `TESTS-06` breaks traceability
+### WR-01: `--context` / `--kubeconfig` flag parsing is entirely untested
 
-**File:** `test/kubectl-mns.bats:70-75`
-**Issue:** Both the `-h` test (line 63) and the `--help` test (line 71) carry the ID `TESTS-06`. Test IDs are the traceability link between requirements and tests. A duplicate ID means one of these tests can never be uniquely referenced in a report, a CI run, or a requirements matrix. The requirement should have a single ID covering both flags, or the second flag gets its own ID (e.g., `TESTS-06b` or `TESTS-08`).
-**Fix:** Either merge them into one parametrized test or assign the `--help` variant a distinct ID:
+**File:** `test/kubectl-mns.bats` (entire file — no test covers this)
+**Issue:** `kubectl-mns` has special handling for `--context` and `--kubeconfig`
+(see plugin lines 37–39): the next arg is consumed as a value and forwarded in
+`extra_kubectl_flags`, which are placed *before* the kubectl subcommand. This is
+the most complex argument-parsing branch in the plugin (state machine via
+`consume_next_as`, ordering constraint, and the trailing-value error at lines
+52–55). None of it is exercised by the test suite.
+
+Specifically untested:
+- `kubectl-mns --context my-ctx -- get pods` (forwards `--context my-ctx` correctly)
+- `kubectl-mns ns1 --kubeconfig ~/.kube/config -- get pods` (mixed ns + flag)
+- `kubectl-mns --context` with no trailing value (plugin exits 1, lines 52–55)
+
+This branch is exactly where regressions tend to land, and the suite gives it zero
+guard.
+
+**Fix:** Add tests, e.g.
+
 ```bash
-# Option A: single test, both flags
-@test "TESTS-06: -h and --help print usage and exit 0" {
-  run "$PLUGIN" -h
+# TESTS-08: --context is forwarded before the kubectl subcommand
+@test "TESTS-08: --context FLAG VALUE is forwarded" {
+  run "$PLUGIN" --context ctx-1 -- get pods
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Usage"* ]]
-
-  run "$PLUGIN" --help
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Usage"* ]]
+  rg -qF -- "--context ctx-1" "$STUB_CALL_LOG"
+  # --context must precede the subcommand
+  rg -q -- "^--context ctx-1 get pods" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace default" "$STUB_CALL_LOG"
 }
 
-# Option B: give --help its own ID
-# TESTS-06: --help prints usage and exits 0
-@test "TESTS-06: --help prints usage and exits 0" { ... }
+# TESTS-09: --context with no value exits 1
+@test "TESTS-09: --context with no value exits 1" {
+  run "$PLUGIN" --context -- get pods
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Error: --context requires a value"* ]]
+}
 ```
 
----
+### WR-02: No test for the "all namespaces fail" exit code (plugin likely returns 0)
 
-### WR-02: Fragile `bash -c '"$PLUGIN" ...'` invocation pattern
+**File:** `test/kubectl-mns.bats` (missing test)
+**Issue:** TESTS-07 only exercises a *partial* failure (ns1 fails, ns2 succeeds).
+There is no test where *every* namespace fails. Tracing the plugin under
+`set -eo pipefail`:
 
-**File:** `test/kubectl-mns.bats:58,65,91`
-**Issue:** Three tests use `run bash -c '"$PLUGIN" <args> 2>&1'` to invoke the plugin. This relies on `$PLUGIN` being exported into the subshell's environment (which `setup()` does via `export PLUGIN`). The inner `bash -c` string receives `"$PLUGIN"` as a literal — the variable is resolved by the *inner* shell at runtime, not the outer shell at `run` time. This is correct today, but it is non-obvious and fragile in two ways:
+- `if ! data=$("${kubectl_cmd[@]}"); then printf 'Error...' >&2; continue; fi` — the
+  `!`/`if` suppresses `set -e`, so a failed kubectl prints the error and continues.
+- When the loop ends on a failing iteration, the last command executed inside the
+  loop body is `printf 'Error: kubectl failed for namespace %s\n'` (exit 0), so the
+  function returns `0` and the script exits `0` — *even though every namespace
+  failed*.
 
-1. If a future refactor of `setup()` removes the `export` keyword (e.g., changes `export PLUGIN` to `PLUGIN=...`), these three tests silently fail with "command not found" or an empty-path error rather than a clear assertion failure.
-2. The `2>&1` redirect is redundant: bats `run` already captures both stdout and stderr of the command it executes.
+This is very likely a plugin bug (a CLI that does nothing successfully because every
+target failed should not exit 0). Because no test pins the all-fail exit code, the
+bug is invisible to the suite. Tests should explicitly assert the desired behavior
+so the plugin can be corrected against a contract.
 
-**Fix:** Invoke the plugin directly. The `2>&1` redirect can be dropped because bats `run` captures stderr in `$output` by default:
+**Fix:** Add a test that pins the contract (and, separately, fix the plugin to
+return non-zero when all namespaces failed):
+
 ```bash
-# Before (fragile):
-run bash -c '"$PLUGIN" -- 2>&1'
+# TESTS-10: all namespaces failing should exit non-zero
+@test "TESTS-10: all namespaces failing exits non-zero" {
+  cat > "$STUB_DIR/kubectl" << 'STUBEOF'
+#!/usr/bin/env bash
+echo "$@" >> "$STUB_CALL_LOG"
+exit 1
+STUBEOF
+  chmod +x "$STUB_DIR/kubectl"
 
-# After (direct, clear):
-run "$PLUGIN" --
+  run "$PLUGIN" ns1 ns2 -- get pods
+  [ "$status" -ne 0 ]
+  rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
+  rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
+  [[ "$output" == *"Error"* ]]
+}
 ```
-This applies to all three occurrences: lines 58, 65, and 91.
 
----
+### WR-03: CI installs ripgrep without `apt-get update` (flaky as runner image ages)
 
-### WR-03: `grep` used directly — violates project tooling conventions
+**File:** `.github/workflows/tests.yml:29`
+**Issue:** The step runs `sudo apt-get install -y ripgrep` directly. ubuntu-latest
+runner images ship a package index snapshot from image-build time; as that snapshot
+ages, referenced `.deb` URLs get rotated out of the mirror and `apt-get install`
+fails with `404  IPFS Not Found` / `Unable to fetch some archives`. This is a
+well-known class of intermittent CI failure on GitHub-hosted runners. The fix is
+standard: update the index first.
 
-**File:** `test/kubectl-mns.bats:33,42,43,52,53,93,94`
-**Issue:** CLAUDE.md mandates `rg` (ripgrep) everywhere grep is used. The test file uses `grep -q` in seven places. While grep is universally available on the CI runner (`ubuntu-latest`) so this will not break tests, it violates the project's enforced tooling standard and sets an inconsistent precedent for test maintenance.
-**Fix:** Replace all `grep -q` occurrences with `rg -q`:
-```bash
-# Before:
-grep -q -- "--namespace default" "$STUB_CALL_LOG"
+**Fix:**
 
-# After:
-rg -qF -- "--namespace default" "$STUB_CALL_LOG"
-```
-Use `-F` (fixed-string) with `rg` since all patterns here are literals, not regexes — this also makes intent clearer and avoids accidental regex metacharacter interpretation.
-
-Note: The `bats-action` in the workflow installs bats but does not install ripgrep. Verify `ubuntu-latest` has `rg` available, or add an install step:
 ```yaml
-- name: Install ripgrep
-  run: sudo apt-get install -y ripgrep
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
 ```
 
----
+### WR-04: TESTS-07 assertions are too weak to lock the partial-failure contract
+
+**File:** `test/kubectl-mns.bats:88-92`
+**Issue:** The test only asserts: status 0, both namespaces appear in the log, and
+the word `Error` appears in `$output`. It does **not** verify:
+- that ns2's output (`=== namespace: ns2 ===` / `stub output`) is actually printed,
+- that the ns1 header is *not* printed (since ns1 failed before any output),
+- that the `Error` message is the *specific* plugin-owned
+  `Error: kubectl failed for namespace ns1` rather than any stray "Error" string.
+
+A future regression where the plugin swallowed ns2's successful output, or printed
+ns1's header before failing, would pass this test silently.
+
+**Fix:**
+
+```bash
+run "$PLUGIN" ns1 ns2 -- get pods
+[ "$status" -eq 0 ]
+rg -qF -- "--namespace ns1" "$STUB_CALL_LOG"
+rg -qF -- "--namespace ns2" "$STUB_CALL_LOG"
+[[ "$output" == *"Error: kubectl failed for namespace ns1"* ]]
+[[ "$output" == *"=== namespace: ns2 ==="* ]]
+[[ "$output" == *"stub output"* ]]
+# ns1 failed → its header should NOT be printed
+[[ "$output" != *"=== namespace: ns1 ==="* ]]
+```
 
 ## Info
 
-### IN-01: TESTS-01 (self-referential sanity test) provides near-zero value
+### IN-01: `TESTS-01` is a no-value sanity test
 
-**File:** `test/kubectl-mns.bats:99-102`
-**Issue:** `TESTS-01` checks that the bats test file itself exists and is readable. This condition is guaranteed by bats executing the file at all — if the file were missing or unreadable, bats would have already failed with an OS-level error before reaching any test. The test cannot fail in any realistic scenario and occupies a requirement slot (TESTS-01) that could map to a more meaningful check (e.g., verify the plugin file exists and is executable).
-**Fix:** Replace with a meaningful smoke test or delete it. A more useful TESTS-01 would be:
+**File:** `test/kubectl-mns.bats:96-99`
+**Issue:** `TESTS-01` only asserts the test file itself exists and is readable. This
+checks the bats harness, not the plugin, and adds no real coverage. Every other test
+already depends on the file being readable, so the assertion is redundant.
+
+**Fix:** Remove `TESTS-01` (and drop the corresponding requirement ID from the
+validation matrix) or repurpose it to assert something meaningful about the plugin
+binary (e.g., that `kubectl-mns` is executable).
+
+### IN-02: TESTS-04 uses an imprecise substring assertion for `-A`
+
+**File:** `test/kubectl-mns.bats:53`
+**Issue:** `! rg -qF -- " -A"` rejects *any* occurrence of the substring `" -A"`
+(space, hyphen, capital A) anywhere in the log. This is fragile: if a future test
+or kubectl arg legitimately contained `" -A"` (e.g., a value for some flag), this
+would fail for the wrong reason. The cleaner contract is "the literal `-A` token is
+not passed to kubectl", which is better checked against the per-call log line, not
+the whole file as an undelimited substring.
+
+**Fix:** Assert against the exact forwarded invocation:
+
 ```bash
-@test "TESTS-01: plugin file exists and is executable" {
-  [ -f "$PLUGIN" ]
-  [ -x "$PLUGIN" ]
+# The forwarded args for the single ns should be exactly: get pods --namespace ns1
+rg -qx -- "get pods --namespace ns1" "$STUB_CALL_LOG"
+```
+
+### IN-03: PATH accumulates across tests; teardown `rm -rf "$STUB_DIR"` is unsafe if `mktemp` fails
+
+**File:** `test/kubectl-mns.bats:20,25-27`
+**Issue:** `export PATH="$STUB_DIR:$PATH"` runs in every `setup()`, so PATH grows
+by one entry per test. `teardown()` removes the directory but leaves the now-dangling
+entry in `PATH`. Harmless for correctness (lookups fail), but noisy and a latent
+trap if a test later relies on PATH hygiene. Separately, if `mktemp -d` failed,
+`STUB_DIR` would be empty and `rm -rf ""` would error.
+
+**Fix:** Guard teardown, and rely on bats' per-test sandboxing rather than
+accumulating:
+
+```bash
+teardown() {
+  [ -n "$STUB_DIR" ] && rm -rf "$STUB_DIR"
+}
+```
+
+### IN-04: `--all-namespaces` / `-A` *before* `--` is untested (treated as a namespace)
+
+**File:** `test/kubectl-mns.bats` (missing edge coverage)
+**Issue:** The plugin only strips `--all-namespaces`/`-A` from args *after* `--`
+(plugin line 45). If a user places them before `--`, they are captured into
+`namespaces[]` (line 42) and forwarded as `--namespace --all-namespaces` — clearly
+not intended. No test pins this behavior, so it is undefined whether the plugin
+should reject or ignore such input. The current behavior is silently wrong.
+
+**Fix:** Add an explicit edge test once the intended contract is decided, e.g.
+
+```bash
+# TESTS-11: -A before -- should not be forwarded as a namespace
+@test "TESTS-11: -A before -- is treated as namespace (current behavior)" {
+  run "$PLUGIN" -A -- get pods
+  # Document current behavior; tighten once the contract is decided.
+  rg -qF -- "--namespace -A" "$STUB_CALL_LOG" || true
 }
 ```
 
 ---
 
-### IN-02: Test ordering does not match ID ordering
-
-**File:** `test/kubectl-mns.bats:29-102`
-**Issue:** Tests are defined in the order TESTS-02, TESTS-03, TESTS-04, TESTS-05, TESTS-06, TESTS-06, TESTS-07, TESTS-01. The TESTS-01 sanity check appears last despite having the lowest numeric ID. Bats executes tests in file order, so reports will show results out of numeric sequence. This is cosmetic but makes requirement traceability harder to follow in CI output.
-**Fix:** Move TESTS-01 to the top of the file, immediately after `teardown()`.
-
----
-
-### IN-03: No timeout on CI test step
-
-**File:** `.github/workflows/tests.yml:29`
-**Issue:** The `Run tests` step has no `timeout-minutes` setting. A hung test (e.g., a kubectl stub that blocks on stdin) would consume the full job timeout (6 hours by default on GitHub Actions), burning runner minutes and delaying feedback.
-**Fix:**
-```yaml
-- name: Run tests
-  timeout-minutes: 5
-  run: bats test/kubectl-mns.bats
-```
-
----
-
-### IN-04: CI triggers only on `main` — feature branches get no coverage
-
-**File:** `.github/workflows/tests.yml:3-7`
-**Issue:** The workflow runs only on `push` to `main` and `pull_request` targeting `main`. Any branch pushed without a PR (e.g., exploratory work, draft branches) receives no CI feedback. Tests are cheap and fast — there is no cost reason to restrict them.
-**Fix:** Add a push trigger for all branches, or explicitly trigger on any push:
-```yaml
-on:
-  push:
-  pull_request:
-    branches: ["main"]
-```
-Or keep branch filtering but expand it:
-```yaml
-on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["main"]
-```
-
----
-
-_Reviewed: 2026-06-22_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewed: 2026-06-22T00:00:00Z_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
