@@ -54,8 +54,13 @@ jobs:
           # This will handover control about PR rejection to the GitHub side
           max-allowed-issues: 2147483647
 
+      # Codacy may produce multiple SARIF runs; CodeQL no longer combines them
+      - name: Normalize SARIF to single run
+        run: jq '.runs = [.runs[0]]' results.sarif > results_normalized.sarif
+
       # Upload the SARIF file generated in the previous step
       - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@1a818fd5f97ed0ee9a823421bd5b171add01227f  # v4.36.2
         with:
-          sarif_file: results.sarif
+          sarif_file: results_normalized.sarif
+          category: codacy
