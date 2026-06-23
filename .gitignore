@@ -1,0 +1,16 @@
+# GSD / planning artifacts
+.planning/
+
+# Serena
+.serena/
+
+# Taskmaster
+.taskmaster/
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
